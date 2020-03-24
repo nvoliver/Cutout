@@ -48,6 +48,8 @@ parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='enables CUDA training')
 parser.add_argument('--seed', type=int, default=0,
                     help='random seed (default: 1)')
+parser.add_argument('--input-res', type=int, default=32,
+                    help='Square input resolution (default: 32 for 32x32)')
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -70,18 +72,22 @@ else:
                                      std=[x / 255.0 for x in [63.0, 62.1, 66.7]])
 
 train_transform = transforms.Compose([])
+if args.input_res != 32:
+    train_transform.transforms.append(transforms.Resize(args.input_res))
 if args.data_augmentation:
-    train_transform.transforms.append(transforms.RandomCrop(32, padding=4))
+    train_transform.transforms.append(
+        transforms.RandomCrop(args.input_res, padding=args.input_res // 8))
     train_transform.transforms.append(transforms.RandomHorizontalFlip())
 train_transform.transforms.append(transforms.ToTensor())
 train_transform.transforms.append(normalize)
 if args.cutout:
-    train_transform.transforms.append(Cutout(n_holes=args.n_holes, length=args.length))
+    train_transform.transforms.append(
+        Cutout(n_holes=args.n_holes, length=args.length))
 
-
-test_transform = transforms.Compose([
-    transforms.ToTensor(),
-    normalize])
+test_transform = transforms.Compose([])
+if args.input_res != 32:
+    test_transform.transforms.append(transforms.Resize(args.input_res))
+test_transform.transforms.extend([transforms.ToTensor(), normalize])
 
 if args.dataset == 'cifar10':
     num_classes = 10
@@ -175,7 +181,8 @@ def test(loader):
 
         with torch.no_grad():
             pred = cnn(images)
-
+        # Reshape 4d output from penultimate 1x1 Conv layer to 2d:
+        pred = pred.view(pred.size(0), -1)
         pred = torch.max(pred.data, 1)[1]
         total += labels.size(0)
         correct += (pred == labels).sum().item()
@@ -200,7 +207,8 @@ for epoch in range(args.epochs):
 
         cnn.zero_grad()
         pred = cnn(images)
-
+        # Reshape 4d output from penultimate 1x1 Conv layer to 2d:
+        pred = pred.view(pred.size(0), -1)
         xentropy_loss = criterion(pred, labels)
         xentropy_loss.backward()
         cnn_optimizer.step()
@@ -220,8 +228,8 @@ for epoch in range(args.epochs):
     test_acc = test(test_loader)
     tqdm.write('test_acc: %.3f' % (test_acc))
 
-    scheduler.step(epoch)  # Use this line for PyTorch <1.4
-    # scheduler.step()     # Use this line for PyTorch >=1.4
+    # scheduler.step(epoch)  # Use this line for PyTorch <1.4
+    scheduler.step()     # Use this line for PyTorch >=1.4
 
     row = {'epoch': str(epoch), 'train_acc': str(accuracy), 'test_acc': str(test_acc)}
     csv_logger.writerow(row)
