@@ -1,7 +1,7 @@
 # run train.py --dataset cifar10 --model resnet18 --data_augmentation --cutout --length 16
 # run train.py --dataset cifar100 --model resnet18 --data_augmentation --cutout --length 8
 # run train.py --dataset svhn --model wideresnet --learning_rate 0.01 --epochs 160 --cutout --length 20
-
+import os
 import pdb
 import argparse
 import numpy as np
@@ -59,7 +59,7 @@ torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
-test_id = args.dataset + '_' + args.model
+test_id = '{}_{}_{}x{}'.format(args.dataset, args.model, args.input_res, args.input_res)
 
 print(args)
 
@@ -167,7 +167,9 @@ if args.dataset == 'svhn':
 else:
     scheduler = MultiStepLR(cnn_optimizer, milestones=[60, 120, 160], gamma=0.2)
 
-filename = 'logs/' + test_id + '.csv'
+log_dir = 'logs'
+os.makedirs(log_dir, exist_ok=True)
+filename = os.path.join(log_dir, test_id + '.csv')
 csv_logger = CSVLogger(args=args, fieldnames=['epoch', 'train_acc', 'test_acc'], filename=filename)
 
 
