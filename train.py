@@ -22,6 +22,7 @@ from util.cutout import Cutout
 from model.resnet import ResNet18
 from model.wide_resnet import WideResNet
 
+import onnx
 model_options = ['resnet18', 'wideresnet']
 dataset_options = ['cifar10', 'cifar100', 'svhn']
 
@@ -236,5 +237,19 @@ for epoch in range(args.epochs):
     row = {'epoch': str(epoch), 'train_acc': str(accuracy), 'test_acc': str(test_acc)}
     csv_logger.writerow(row)
 
-torch.save(cnn.state_dict(), 'checkpoints/' + test_id + '.pt')
+checkpoints_dir = 'checkpoints'
+os.makedirs(checkpoints_dir, exist_ok=True)
+
+torch.save(cnn.state_dict(),
+           os.path.join(checkpoints_dir, '{}.pt'.format(test_id)))
+dummy_input = torch.randn((20, 3, args.input_res, args.input_res),
+                          requires_grad=False)
+onnx_path = os.path.join('checkpoints', '{}.onnx'.format(test_id))
+
+torch.onnx.export(cnn.cpu(),
+                  dummy_input,
+                  onnx_path,
+                  opset_version=10,
+                  do_constant_folding=True,
+                  keep_initializers_as_inputs=True)
 csv_logger.close()
