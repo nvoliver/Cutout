@@ -73,8 +73,14 @@ else:
                                      std=[x / 255.0 for x in [63.0, 62.1, 66.7]])
 
 train_transform = transforms.Compose([])
+resize_transform = None
 if args.input_res != 32:
-    train_transform.transforms.append(transforms.Resize(args.input_res))
+    # Use bilinear interpolation (also default value):
+    interpolation = 2
+    # Re-use it for testing later:
+    resize_transform = transforms.Resize(args.input_res, interpolation=interpolation)
+    train_transform.transforms.append(resize_transform)
+
 if args.data_augmentation:
     train_transform.transforms.append(
         transforms.RandomCrop(args.input_res, padding=args.input_res // 8))
@@ -86,8 +92,9 @@ if args.cutout:
         Cutout(n_holes=args.n_holes, length=args.length))
 
 test_transform = transforms.Compose([])
-if args.input_res != 32:
-    test_transform.transforms.append(transforms.Resize(args.input_res))
+if resize_transform is not None:
+    test_transform.transforms.append(resize_transform)
+
 test_transform.transforms.extend([transforms.ToTensor(), normalize])
 
 if args.dataset == 'cifar10':
