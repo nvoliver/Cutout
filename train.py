@@ -20,10 +20,11 @@ from util.misc import CSVLogger
 from util.cutout import Cutout
 
 from model.resnet import ResNet18
+from model.resnet import ResNet10
 from model.wide_resnet import WideResNet
 
 import onnx
-model_options = ['resnet18', 'wideresnet']
+model_options = ['resnet10', 'resnet18', 'wideresnet']
 dataset_options = ['cifar10', 'cifar100', 'svhn']
 
 parser = argparse.ArgumentParser(description='CNN')
@@ -157,6 +158,8 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 
 if args.model == 'resnet18':
     cnn = ResNet18(num_classes=num_classes)
+if args.model == 'resnet10':
+    cnn = ResNet10(num_classes=num_classes)
 elif args.model == 'wideresnet':
     if args.dataset == 'svhn':
         cnn = WideResNet(depth=16, num_classes=num_classes, widen_factor=8,
