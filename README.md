@@ -20,7 +20,7 @@ Bibtex:
 
 ## Results and Usage   
 ### Dependencies  
-[PyTorch v0.4.0](http://pytorch.org/)  
+[PyTorch v1.4.0](http://pytorch.org/)
 [tqdm](https://pypi.python.org/pypi/tqdm)
 
 ### ResNet18  
@@ -36,6 +36,17 @@ To train ResNet18 on CIFAR10 with data augmentation and cutout:
 
 To train ResNet18 on CIFAR100 with data augmentation and cutout:  
 `python train.py --dataset cifar100 --model resnet18 --data_augmentation --cutout --length 8`
+
+## ResNet-10 and ResNet-18 with CIFAR-10 at 16x16, 32x32, 64x64 inputs
+Test error (%, flip/translation augmentation, mean/std normalization, best of 3 runs)
+
+| **Network** | **CIFAR-10 at 32x32 inputs (default)** | **CIFAR-10 at 16x16 inputs (resized with bilinear interpolation)** | **CIFAR-10 at 64x64 inputs (resized with bilinear interpolation)** |
+| ----------- | ------------ | ------------- |------------- |
+| **Command** | `python train.py --dataset cifar10 --model resnet{10, 18} --data_augmentation --cutout --length 16 --input-res 32`  | `python train.py --dataset cifar10 --model resnet{10, 18} --data_augmentation --cutout --length 8 --input-res 16` | `python train.py --dataset cifar10 --model resnet{10, 18} --data_augmentation --cutout --length 32 --input-res 64` |
+| ResNet-10 + cutout | 4.84   | 9.92         |  5.34         |
+| ResNet-18 + cutout | 3.81   | 8.89         |  3.79         |
+
+Used PyTorch version: v.1.4.0
 
 ### WideResNet
 WideResNet model implementation from https://github.com/xternalz/WideResNet-pytorch  
